@@ -1,0 +1,43 @@
+version: '2'
+services:
+    kafka:
+        container_name: kafka
+        image: spotify/kafka
+        ports:
+             - "9092:9092"
+             - "2181:2181"
+        expose:
+            - 9092
+            - 2181
+        environment:
+            - CONSUMER_THREADS=1
+            - TOPICS=notification
+            - ADVERTISED_PORT=9092
+    web:
+        container_name: web
+        image: python:3.6.6-alpine
+        working_dir: /usr/src/app
+        ports:
+            - "5001:5001"
+        expose:
+            - 5001
+        command: /bin/sh -c "source .vendor/bin/activate && pip install -r requirements.txt && python web.py"
+        volumes:
+            - .:/usr/src/app
+        depends_on:
+            - kafka
+        links:
+            - kafka
+    consumer:
+        stdin_open: true
+        tty: true
+        container_name: consumer
+        image: python:3.6.6-alpine
+        working_dir: /usr/src/app
+        command: /bin/sh -c "source .vendor/bin/activate && pip install -r requirements.txt && python consumer.py"
+        volumes:
+            - .:/usr/src/app
+        depends_on:
+            - kafka
+        links:
+            - kafka
